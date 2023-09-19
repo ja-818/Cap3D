@@ -34,7 +34,7 @@ model, preprocess = clip.load("ViT-B/32", device=device)
 
 # set up GPT4
 def summarize_captions_gpt4(text):
-    prompt = f"Given a set of descriptions about the same 3D object, distill these descriptions into one concise caption. The descriptions are as follows: '{text}'. Avoid describing background, surface, and posture. The caption should be:"
+    prompt = f"Given a set of descriptions about the same 3D game asset, distill these descriptions into one concise caption. The descriptions are as follows: '{text}'. Avoid describing background, surface, and posture. Keep in mind that it's only 1 game asset, so eliminate other elements that are not necessary for the caption. The caption should be:"
 
     try:
         response = openai.ChatCompletion.create(
@@ -53,7 +53,7 @@ def summarize_captions_gpt4(text):
 
 # set up GPT3.5
 def summarize_captions_gpt35(text):
-    prompt = f"Given a set of descriptions about the same 3D object, distill these descriptions into one concise caption. The descriptions are as follows: '{text}'. Avoid describing background, surface, and posture. The caption should be:"
+    prompt = f"Given a set of descriptions about the same 3D game asset, distill these descriptions into one concise caption. The descriptions are as follows: '{text}'. Avoid describing background, surface, and posture. Keep in mind that it's only 1 game asset, so eliminate other elements that are not the case. The caption should be:"
 
     try:
         response = openai.ChatCompletion.create(
