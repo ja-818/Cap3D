@@ -15,15 +15,17 @@ from torch.nn import CosineSimilarity
 import csv
 import argparse
 from functools import reduce
+from dotenv import load_dotenv
+
+load_dotenv()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--parent_dir", type = str, default='./example_material')
-parser.add_argument('--openai_api_key', type = str, required = True)
 parser.add_argument('--gpt_type', type = str, default='gpt4', choices=['gpt4', 'gpt3.5'])
 args = parser.parse_args()
 
 # set up API key
-openai.api_key = args.openai_api_key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # set up CLIP
 cos = CosineSimilarity(dim=1, eps=1e-6)
