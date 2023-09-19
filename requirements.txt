@@ -1,0 +1,4 @@
+salesforce-lavis
+openai
+git+https://github.com/openai/CLIP.git
+python-dotenv

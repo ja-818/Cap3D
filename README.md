@@ -1,62 +1,59 @@
-# [Scalable 3D Captioning with Pretrained Models](https://arxiv.org/abs//2306.07279)
+# Captioning Pipeline: Rendering -> BLIP2 -> CLIP -> GPT4
 
-<a href="https://cap3d-um.github.io/"><img src="https://img.shields.io/static/v1?label=Project&message=Website&color=red" height=20.5></a> 
-<a href="https://arxiv.org/abs/2306.07279"><img src="https://img.shields.io/badge/arXiv-2306.07279-b31b1b.svg" height=20.5></a>
+This directory hosts our captioning pipeline code, which involves (1) rendering 3D objects into eight views, (2) generating five captions per view with BLIP2, (3) selecting one caption per view using CLIP, and (4) consolidating a final caption from multi-view using GPT4. Example files in `./example_material` provide guidance on running our pipeline using the below commands.  You should be able to generate the final captions for the [ten example objects](https://github.com/crockwell/Cap3D/tree/main/captioning_pipeline/example_material/glbs).
 
-[Tiange Luo*](https://tiangeluo.github.io/), [Chris Rockwell*](https://crockwell.github.io), [Honglak Lee†](https://web.eecs.umich.edu/~honglak/), [Justin Johnson†](https://web.eecs.umich.edu/~justincj) (*Equal contribution    †Equal Advising)
+## Rendering
+Please move to `Cap3D/captioning_pipeline/` and download our Blender via the below commands. You can use your own Blender, while may need to pip install several packages.
 
-
-We provide our codes for captioning and finetuning text-to-3D models in [captioning_pipeline](https://github.com/crockwell/Cap3D/tree/main/captioning_pipeline) and [text-to-3D](https://github.com/crockwell/Cap3D/tree/main/text-to-3D). Detailed instruction and where to download our model checkpoints can be found in each directory.
-
-Data download available at [Hugging Face](https://huggingface.co/datasets/tiange/Cap3D), including descriptive captions for 3D objects in [Objaverse](https://objaverse.allenai.org/) and [ABO](https://amazon-berkeley-objects.s3.amazonaws.com/index.html), along with Objaverse's point clouds, rendered images, and Shap-E latent codes.
-
-## Overview
-Cap3D provides detailed descriptions of 3D objects by leveraging pretrained models in captioning, alignment, and LLM to consolidate multi-view information.
-
-<img src="teaser.png" alt="drawing">
-
-
-## Citation
-If you find our code or data useful, please consider citing:
 ```
-@article{luo2023scalable,
-      title={Scalable 3D Captioning with Pretrained Models},
-      author={Luo, Tiange and Rockwell, Chris and Lee, Honglak and Johnson, Justin},
-      journal={arXiv preprint arXiv:2306.07279},
-      year={2023}
-}
+git clone https://github.com/crockwell/Cap3D.git
+cd Cap3D/captioning_pipeline/ 
+
+wget https://huggingface.co/datasets/tiange/Cap3D/resolve/main/blender.zip
+unzip blender.zip
 ```
 
-If you use our captions for Objaverse objects, please cite:
+Please run the below command to render objects (`.glb`, `.obj`) into `.png` images saved at `{parent_dir}/Cap3D_imgs/Cap3D_imgs_view{0~7}/`
 ```
-@inproceedings{deitke2023objaverse,
-  title={Objaverse: A universe of annotated 3d objects},
-  author={Deitke, Matt and Schwenk, Dustin and Salvador, Jordi and Weihs, Luca and Michel, Oscar and VanderBilt, Eli and Schmidt, Ludwig and Ehsani, Kiana and Kembhavi, Aniruddha and Farhadi, Ali},
-  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
-  pages={13142--13153},
-  year={2023}
-}
+# --object_path_pkl: point to a pickle file which store the object path
+# --parent_dir: the directory store the rendered images and their associated camera matrix
+# Rendered images & camera matrix will stored at partent_dir/Cap3D_imgs/
+
+./blender-3.4.1-linux-x64/blender -b -P render_script.py -- --object_path_pkl './example_material/example_object_path.pkl' --parent_dir './example_material'
 ```
 
-If you use our captions for ABO objects, please cite:
+## BLIP2
+Please install BLIP2:
 ```
-@inproceedings{collins2022abo,
-  title={Abo: Dataset and benchmarks for real-world 3d object understanding},
-  author={Collins, Jasmine and Goel, Shubham and Deng, Kenan and Luthra, Achleshwar and Xu, Leon and Gundogdu, Erhan and Zhang, Xi and Vicente, Tomas F Yago and Dideriksen, Thomas and Arora, Himanshu and others},
-  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
-  pages={21126--21136},
-  year={2022}
-}
+conda create -n Cap3D python=3.8
+conda activate Cap3D
+
+pip install salesforce-lavis
 ```
 
-## Acknowledgments
-This work is supported by two grants from LG AI Research and Grant #1453651 from NSF.
-Thanks to <a href="https://www.linkedin.com/in/kaiyi-li-1b4a1114b/">Kaiyi Li</a> for his technical supports.
-Thanks to <a href="https://mbanani.github.io/">Mohamed El Banani</a>, <a href="http://kdexd.xyz/">Karan Desai</a> and <a href="https://nileshkulkarni.github.io/">Ang Cao</a> for their many helpful suggestions. Thanks <a href="https://mattdeitke.com/">Matt Deitke</a> for helping with Objaverse-related questions. 
+Please run the below command, BLIP2 will generate caption for each view (a total of 8) and store as `{parent_dir}/Cap3D_captions/Cap3D_captions_view{0~7}.pkl`
+```
+# --model_type: 'pretrain_flant5xxl' (used in our paper) or 'pretrain_flant5xl' (smaller)
 
-We also thank the below open-source projects:
-- [PyTorch](https://www.github.com/pytorch/pytorch) 
-- [Blender](https://github.com/blender/blender)
-- [PyTorch3D](https://github.com/facebookresearch/pytorch3d)
-- [BLIP2](https://github.com/salesforce/LAVIS/tree/main/projects/blip2)
-- [CLIP](https://github.com/openai/CLIP)
+python caption_blip2.py --parent_dir ./example_material --model_type 'pretrain_flant5xxl'
+
+
+# use QA branch to generate geometrical descriptions (as shown in Figure 4, https://arxiv.org/abs//2306.07279)
+
+python caption_blip2.py --parent_dir ./example_material --model_type 'pretrain_flant5xxl' --use_qa
+```
+
+## CLIP + GPT
+Please install CLIP and GPT-api first:
+```
+conda activate Cap3D
+pip install openai
+pip install git+https://github.com/openai/CLIP.git
+```
+
+Please input your openai api key. The results will be saved as `{parent_dir}/Cap3D_captions/Cap3d_captions_final.csv`.
+Our paper used GPT4, while you can try GPT3.5 which is much cheaper ($0.03 vs. $0.0015 per 1k tokens): --gpt_type == ['gpt4', 'gpt3.5'].
+
+```
+python caption_clip_gpt.py --parent_dir './example_material' --openai_api_key 'Your-key' --gpt_type 'gpt4'
+```
