@@ -8,4 +8,4 @@ wget https://huggingface.co/datasets/tiange/Cap3D/resolve/main/blender.zip
 
 unzip blender.zip
 
-touch .env && echo "API_KEY=" >> .env
+touch .env && echo "OPENAI_API_KEY=" >> .env
