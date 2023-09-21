@@ -34,7 +34,7 @@ model, preprocess = clip.load("ViT-B/32", device=device)
 
 # set up GPT4
 def summarize_captions_gpt4(text):
-    prompt = f"Given a set of descriptions about the same 3D game asset, distill these descriptions into one concise caption. The descriptions are as follows: '{text}'. Avoid describing background, surface, and posture. Keep in mind that it's only 1 game asset, so eliminate other elements that are not necessary for the caption. The caption should be:"
+    prompt = f"Given a set of descriptions about the same 3D game asset, distill these descriptions into one concise caption. The descriptions are as follows: '{text}'. Avoid describing background, surface, and posture. Keep in mind that it's only 1 game asset, so eliminate other elements that are not the case. Don't include sentences like 'is a 3D model of a' or 'a low poly asset of a', just say what's the object. Also, if it says it's a toy, a model, or something similar, just describe the object without saying it's a toy or a model. Also, provide 5 keywords that describe the object. Avoid as keywords words that are not related to the object, like 'game asset', '3d' or 'model'. Your output should be only a python dict with the keys 'description' and 'keywords'"
 
     try:
         response = openai.ChatCompletion.create(
@@ -53,7 +53,7 @@ def summarize_captions_gpt4(text):
 
 # set up GPT3.5
 def summarize_captions_gpt35(text):
-    prompt = f"Given a set of descriptions about the same 3D game asset, distill these descriptions into one concise caption. The descriptions are as follows: '{text}'. Avoid describing background, surface, and posture. Keep in mind that it's only 1 game asset, so eliminate other elements that are not the case. The caption should be:"
+    prompt = f"Given a set of descriptions about the same 3D game asset, distill these descriptions into one concise caption. The descriptions are as follows: '{text}'. Avoid describing background, surface, and posture. Keep in mind that it's only 1 game asset, so eliminate other elements that are not the case. Don't include sentences like 'is a 3D model of a' or 'a low poly asset of a', just say what's the object. Also, if it says it's a toy, a model, or something similar, just describe the object without saying it's a toy or a model. Also, provide 5 keywords that describe the object. Avoid as keywords words that are not related to the object, like 'game asset', '3d' or 'model'. Your output should be only a python dict with the keys 'description' and 'keywords'"
 
     try:
         response = openai.ChatCompletion.create(
