@@ -1,3 +1,5 @@
+source .venv/bin/activate
+
 # Get the first argument passed to the script as parent_dir
 parent_dir="$1"
 
