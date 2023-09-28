@@ -32,10 +32,30 @@ cos = CosineSimilarity(dim=1, eps=1e-6)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
 
-# set up GPT4
-def summarize_captions_gpt4(text):
-    prompt = f"Given a set of descriptions about the same 3D game asset, distill these descriptions into one concise caption. The descriptions are as follows: '{text}'. Avoid describing background, surface, and posture. Keep in mind that it's only 1 game asset, so eliminate other elements that are not the case. Don't include sentences like 'is a 3D model of a' or 'a low poly asset of a', just say what's the object. Also, if it says it's a toy, a model, or something similar, just describe the object without saying it's a toy or a model. Also, provide 5 keywords that describe the object. Avoid as keywords words that are not related to the object, like 'game asset', '3d' or 'model'. Your output should be only a python dict with the keys 'description' and 'keywords'"
+prompt = """
+Your task is to destill information from different descriptions of the same 3D game asset. Your output should be a line for a csv filein plain text.
+The csv contains the following keys:
+- 'short_description': a short description of the asset (1 to 4 words)
+- 'long_description': a detailed description of the asset, saying what's the asset and some phisical traits (10 to 15 words)
+- 'keywords': words that could easily identify the asset (max 5 words)
 
+Avoid including: 
+- background 
+- surface
+- posture
+- how the asset is made (like it's a 3D model or low poly asset: instead of "a 3d model of a tree" say "a tree")
+- that the asset is a representation (like that it's a toy or a model: instead of say "a toy truck" just say "a truck")
+
+Create only one csv line with one object. The descriptions could include other objects, remove them if they are not the main object. 
+
+3D Game asset descriptions:
+"""
+
+# set up GPT4
+def summarize_captions_gpt4(text, prompt):
+    prompt = prompt + text
+    
+    
     try:
         response = openai.ChatCompletion.create(
             model="gpt-4",
@@ -52,9 +72,8 @@ def summarize_captions_gpt4(text):
     return response.choices[0].message['content']
 
 # set up GPT3.5
-def summarize_captions_gpt35(text):
-    prompt = f"Given a set of descriptions about the same 3D game asset, distill these descriptions into one concise caption. The descriptions are as follows: '{text}'. Avoid describing background, surface, and posture. Keep in mind that it's only 1 game asset, so eliminate other elements that are not the case. Don't include sentences like 'is a 3D model of a' or 'a low poly asset of a', just say what's the object. Also, if it says it's a toy, a model, or something similar, just describe the object without saying it's a toy or a model. Also, provide 5 keywords that describe the object. Avoid as keywords words that are not related to the object, like 'game asset', '3d' or 'model'. Your output should be only a python dict with the keys 'description' and 'keywords'"
-
+def summarize_captions_gpt35(text, prompt):
+    prompt = prompt + text
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -107,9 +126,9 @@ for i, cur_uid in enumerate(uids):
     # sometimes, OpenAI API will return an error, so we need to try again until it works
     while True:
         if args.gpt_type == 'gpt4':
-            summary = summarize_captions_gpt4(cur_final_caption)
+            summary = summarize_captions_gpt4(cur_final_caption, prompt)
         elif args.gpt_type == 'gpt3.5':
-            summary = summarize_captions_gpt35(cur_final_caption)
+            summary = summarize_captions_gpt35(cur_final_caption, prompt)
         if 'An error occurred' not in summary:
             break
     
